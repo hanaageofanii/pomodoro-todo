@@ -71,13 +71,21 @@ button {
   border: none;
   padding: 0 1rem;
   box-shadow: 3px 3px 0 #fada7a;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: filter 0.2s;
+  /* display: flex; */
+  transition: transform 0.1s;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-button:hover {
+/* button:hover {
   filter: brightness(1.1);
+} */
+
+button:hover {
+  transform: translateY(2px);
 }
 
 .task-list {

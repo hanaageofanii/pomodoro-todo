@@ -21,6 +21,17 @@
       <button @click="resetTimer">RESET</button>
     </div>
   </div>
+
+  <iframe
+    style="border-radius: 6px"
+    src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0"
+    width="100%"
+    height="80"
+    frameBorder="0"
+    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+    loading="lazy"
+  >
+  </iframe>
 </template>
 
 <script setup>
@@ -131,6 +142,12 @@ onUnmounted(() => clearInterval(timer))
   outline: none;
 }
 
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .buttons button {
   background: #f0a04b;
   color: #222;
@@ -139,7 +156,7 @@ onUnmounted(() => clearInterval(timer))
   margin: 0 0.3rem;
   border-radius: 4px;
   box-shadow: 2px 2px 0 #fada7a;
-  transition: all 0.2s;
+  transition: transform 0.1s;
   cursor: pointer;
 }
 
@@ -150,6 +167,10 @@ onUnmounted(() => clearInterval(timer))
 
 .buttons button:hover:not(:disabled) {
   filter: brightness(1.1);
+}
+
+.buttons button:hover {
+  transform: translateY(-2px);
 }
 
 .settings input:disabled {
