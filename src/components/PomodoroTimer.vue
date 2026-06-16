@@ -170,6 +170,11 @@ onUnmounted(() => {
   text-align: center;
   margin-bottom: 2rem;
   user-select: none;
+  /* Tambahan: berikan padding kanan-kiri agar tidak menempel di layar HP */
+  padding: 0 1rem; 
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .timer h2 {
   font-size: 0.8rem;
@@ -178,14 +183,16 @@ onUnmounted(() => {
   color: #ffb4a2;
 }
 .time-display {
-  font-size: 3rem;
+  /* Diubah dari 3rem menjadi clamp agar ukurannya dinamis mengikuti lebar layar */
+  font-size: clamp(1.8rem, 8vw, 3rem);
   background: #222;
   color: #eee;
-  padding: 1rem 2rem;
+  padding: 1rem; /* disederhanakan agar tidak terlalu memakan ruang */
   border: 4px solid #c599b6;
   border-radius: 6px;
   margin-bottom: 0.7rem;
   font-family: 'Press Start 2P', cursive, monospace;
+  box-sizing: border-box;
 }
 .progress-bar {
   width: 100%;
@@ -195,6 +202,7 @@ onUnmounted(() => {
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 1rem;
+  box-sizing: border-box;
 }
 .progress-fill {
   height: 100%;
@@ -205,21 +213,25 @@ onUnmounted(() => {
   background: #4caf50;
 }
 .settings {
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
   display: flex;
   justify-content: center;
   gap: 1rem;
+  flex-wrap: wrap; /* Agar input turun ke bawah jika layar sangat sempit */
 }
 .settings label {
-  font-size: 0.7rem;
+  /* Diubah menjadi clamp agar teks label mengecil di HP jadul */
+  font-size: clamp(0.55rem, 2vw, 0.7rem);
   color: #f9f9f9;
   font-family: 'Press Start 2P', cursive, monospace;
   user-select: none;
+  display: flex;
+  align-items: center;
 }
 .settings input {
-  width: 3rem;
+  width: 3.5rem; /* Sedikit dilebarkan agar angka 2 digit aman */
   margin-left: 0.3rem;
-  font-size: 0.7rem;
+  font-size: clamp(0.55rem, 2vw, 0.7rem);
   padding: 0.2rem;
   border-radius: 4px;
   border: 3px solid #eee;
@@ -228,24 +240,29 @@ onUnmounted(() => {
   box-shadow: 3px 3px 0 #444;
   font-family: 'Press Start 2P', cursive, monospace;
   outline: none;
+  box-sizing: border-box;
 }
 .buttons {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.7rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap; /* Tombol akan menyesuaikan diri jika space kurang */
 }
 .buttons button {
   background: #f0a04b;
   color: #222;
   font-weight: bold;
-  padding: 0.5rem 1rem;
-  margin: 0 0.3rem;
+  /* Menggunakan clamp untuk ukuran teks tombol */
+  font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+  padding: 0.5rem 0.8rem;
+  margin: 0; /* Margin dihapus karena sudah diatur oleh gap */
   border-radius: 4px;
   box-shadow: 2px 2px 0 #fada7a;
   transition: transform 0.1s;
   cursor: pointer;
+  white-space: nowrap; /* Teks button tidak akan patah ke bawah */
 }
 .buttons button.running {
   background: #4caf50;
@@ -260,20 +277,42 @@ onUnmounted(() => {
 .mute-btn {
   background: transparent !important;
   box-shadow: none !important;
-  font-size: 1.2rem;
+  font-size: 1.2rem !important;
   padding: 0.3rem !important;
 }
 .stats {
-  font-size: 0.6rem;
+  /* Menggunakan clamp agar teks statistik tidak meluber keluar layar */
+  font-size: clamp(0.5rem, 1.8vw, 0.6rem);
   color: #fada7a;
   font-family: 'Press Start 2P', cursive, monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 .stats .sep {
-  margin: 0 0.5rem;
+  margin: 0 0.2rem;
   opacity: 0.5;
 }
 .settings input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* --- RESPONSIVE BREAKPOINT FOR SMALL DEVICES --- */
+@media (max-width: 380px) {
+  .settings {
+    flex-direction: column; /* Label fokus & istirahat bertumpuk vertikal di HP sangat kecil */
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .stats .sep {
+    display: none; /* Sembunyikan garis pemisah '|' jika mode vertikal */
+  }
+  .stats {
+    flex-direction: column; /* Statistik bertumpuk atas-bawah */
+    gap: 0.4rem;
+  }
 }
 </style>
