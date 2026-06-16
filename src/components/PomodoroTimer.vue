@@ -166,51 +166,60 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
-/* --- 1. RESET GLOBAL UNTUK KOMPONEN INI --- */
+/* --- 1. RESET BOX-SIZING --- */
 .timer, .timer * {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   margin: 0;
   padding: 0;
 }
 
-/* --- 2. KONTAINER UTAMA (Si Ungu/Coklat) --- */
-/* Catatan: Pastikan elemen pembungkus paling luar di komponenmu menggunakan class .timer ini */
+/* --- 2. CONTAINER UNGU UTAMA --- */
 .timer {
   text-align: center;
   width: 100%;
-  max-width: 400px; /* Batas maksimal lebar agar rapi di desktop */
-  margin: 0 auto 2rem auto;
-  
-  /* PADDING DIKECILKAN: Ini kunci agar elemen di dalam punya ruang lebih di HP */
-  padding: 1.5rem 1rem; 
-  
+  /* Menggunakan max-width agar pas dengan kotak ungu kamu */
+  max-width: 100%; 
+  margin: 0 auto;
+  /* Diberi padding tipis agar tidak mentok ke dinding kotak ungu */
+  padding: 1rem 0.7rem; 
   user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Memberikan jarak antar elemen secara vertikal otomatis */
+  gap: 1rem;
 }
 
 .timer h2 {
   font-size: clamp(0.7rem, 2.5vw, 0.9rem);
   letter-spacing: 3px;
   color: #ffb4a2;
-  margin-bottom: 0.2rem;
 }
 
-/* --- 3. KOTAK HITAM TIMER (SEKARANG DIJAMIN AMAN) --- */
+/* --- 3. KOTAK HITAM TIMER (DIPAKSA FLEKSIBEL) --- */
 .time-display {
-  /* Menggunakan vw (viewport width) agar ukurannya mengecil ekstrim jika layar sangat sempit */
-  font-size: clamp(1.6rem, 8vw, 3rem); 
+  width: 100%; /* Selalu mengikuti lebar kontainer */
+  max-width: 100%;
+  
+  /* UKURAN FONT DIKECILKAN PADA LAYAR HP */
+  font-size: clamp(1.5rem, 9vw, 3rem); 
+  
   background: #222;
   color: #eee;
-  padding: 0.8rem 0.2rem; /* Padding horizontal seminimal mungkin */
+  
+  /* Padding dikunci sangat kecil agar teks tidak terdorong keluar */
+  padding: 0.8rem 0.2rem; 
+  
   border: 4px solid #c599b6;
   border-radius: 6px;
   font-family: 'Press Start 2P', cursive, monospace;
-  width: 100%;
+  
+  /* Memastikan teks selalu berada tepat di tengah kotak */
   display: flex;
   justify-content: center;
   align-items: center;
+  
+  /* Mencegah teks meluber ke baris baru */
+  white-space: nowrap; 
+  overflow: hidden;
 }
 
 /* --- 4. PROGRESS BAR --- */
@@ -231,51 +240,53 @@ onUnmounted(() => {
   background: #4caf50;
 }
 
-/* --- 5. SETTING INPUT (BISA VERTIKAL KALAU LAYAR MINIM) --- */
+/* --- 5. SETTING INPUT (OTOMATIS TURUN KE BAWAH JIKA SEMPIT) --- */
 .settings {
   display: flex;
   justify-content: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-wrap: wrap; /* Kunci agar input bertumpuk vertikal jika layar sempit */
 }
 .settings label {
-  font-size: clamp(0.55rem, 2vw, 0.7rem);
+  font-size: clamp(0.5rem, 2vw, 0.7rem);
   color: #f9f9f9;
   font-family: 'Press Start 2P', cursive, monospace;
   display: flex;
   align-items: center;
 }
 .settings input {
-  width: 3.5rem;
-  margin-left: 0.4rem;
+  width: 3rem;
+  margin-left: 0.3rem;
   font-size: clamp(0.55rem, 2vw, 0.7rem);
   padding: 0.2rem;
   border-radius: 4px;
   border: 3px solid #eee;
   background: #222;
   color: #eee;
-  box-shadow: 3px 3px 0 #444;
+  box-shadow: 2px 2px 0 #444;
   font-family: 'Press Start 2P', cursive, monospace;
   outline: none;
 }
 
-/* --- 6. TOMBOL-TOMBOL --- */
+/* --- 6. TOMBOL START / RESET / MUTE --- */
 .buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 .buttons button {
   background: #f0a04b;
   color: #222;
   font-weight: bold;
-  font-size: clamp(0.65rem, 2.2vw, 0.8rem);
-  padding: 0.5rem 0.8rem;
+  font-size: clamp(0.6rem, 2.2vw, 0.8rem);
+  padding: 0.5rem 0.7rem;
   border-radius: 4px;
   box-shadow: 2px 2px 0 #fada7a;
   transition: transform 0.1s;
   cursor: pointer;
+  white-space: nowrap;
 }
 .buttons button.running {
   background: #4caf50;
@@ -296,7 +307,7 @@ onUnmounted(() => {
 
 /* --- 7. STATISTIK --- */
 .stats {
-  font-size: clamp(0.5rem, 1.8vw, 0.6rem);
+  font-size: clamp(0.45rem, 1.8vw, 0.6rem);
   color: #fada7a;
   font-family: 'Press Start 2P', cursive, monospace;
   display: flex;
@@ -313,30 +324,21 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-/* --- 8. PERBAIKAN FORM DAFTAR TUGAS DI BAWAH --- */
-/* Sesuaikan class di bawah ini dengan nama class pembungkus input tugas & tombol TAMBAH-mu */
-.todo-form, 
-div:has(> input[placeholder*="tugas"]) { 
-  display: flex !important;
+/* --- 8. BAGIAN DAFTAR TUGAS (MENCEGAH MELUBER) --- */
+/* Target global untuk input text bertuliskan "tugas" */
+input[placeholder*="tugas"] {
   width: 100% !important;
-  gap: 0.4rem !important;
+  max-width: 100% !important;
+  min-width: 0 !important; /* Kunci flexbox agar input bisa mengecil */
+  font-size: clamp(0.6rem, 2.5vw, 0.8rem) !important;
 }
 
-/* Memaksa input tugas mengalah dan mengecil mengikuti container */
-.todo-form input, 
+/* Jika input tugas & tombol TAMBAH dibungkus sebuah div */
 input[placeholder*="tugas"] {
   flex: 1 !important;
-  min-width: 0 !important; 
-  font-size: clamp(0.6rem, 2vw, 0.8rem) !important;
 }
 
-.todo-form button,
-button:has(text:contains("TAMBAH")) {
-  font-size: clamp(0.6rem, 2vw, 0.8rem) !important;
-  white-space: nowrap;
-}
-
-/* --- BREAKPOINT HP SANGAT KECIL (< 360px) --- */
+/* --- BREAKPOINT SMARTPHONE JADUL / SANGAT SEMPIT --- */
 @media (max-width: 360px) {
   .settings {
     flex-direction: column;
