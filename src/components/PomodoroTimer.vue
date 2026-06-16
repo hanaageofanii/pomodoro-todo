@@ -21,9 +21,6 @@
       </button>
       <button @click="resetTimer">RESET</button>
       <button @click="toggleMute" class="mute-btn">{{ muted ? '🔇' : '🔊' }}</button>
-      <button @click="toggleAutoStart" class="mute-btn" :title="autoStart ? 'Auto-lanjut: ON' : 'Auto-lanjut: OFF'">
-        {{ autoStart ? '🔁' : '⏸️🔁' }}
-      </button>
     </div>
     <div class="stats">
       <span>🍅 Sesi fokus: {{ completedSessions }}</span>
@@ -71,14 +68,10 @@ const totalFocusLabel = computed(() => {
   return h > 0 ? `${h}j ${m}m` : `${m}m`
 })
 
-// --- INOVASI: mute & auto-start toggle ---
+// --- INOVASI: mute toggle ---
 const muted = ref(false)
-const autoStart = ref(true) // kalau true, sesi berikutnya otomatis lanjut tanpa klik START
 function toggleMute() {
   muted.value = !muted.value
-}
-function toggleAutoStart() {
-  autoStart.value = !autoStart.value
 }
 
 // --- INOVASI: suara beep via Web Audio API, tanpa file eksternal ---
@@ -137,14 +130,10 @@ function tick() {
     playBeep()
     notify('Pomodoro Timer', isBreak.value ? 'Waktunya istirahat!' : 'Waktunya fokus!')
 
-    // INOVASI KUNCI: kalau autoStart mati, timer benar-benar berhenti di sini
-    // (sesuai sifat "timer pada umumnya" yang kamu minta sebelumnya).
-    // Kalau autoStart aktif, interval yang sudah jalan otomatis lanjut karena
-    // kita TIDAK menyentuh `running` ataupun `clearInterval` di branch ini.
-    if (!autoStart.value) {
-      running.value = false
-      clearInterval(timer)
-    }
+    // Timer SELALU berhenti begitu sesi habis.
+    // User harus klik START secara manual untuk mulai sesi berikutnya.
+    running.value = false
+    clearInterval(timer)
   }
 }
 
