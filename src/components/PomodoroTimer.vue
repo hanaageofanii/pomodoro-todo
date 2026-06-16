@@ -1,9 +1,5 @@
 <template>
   <div class="app">
-    <div class="header">
-      <h1>🍅 POMODORO</h1>
-      <p>Fokus sepenuhnya. Istirahat sungguh-sungguh.</p>
-    </div>
 
     <!-- Notif Bar -->
     <div v-if="showNotifBar" class="notif-bar">
@@ -14,60 +10,83 @@
     <!-- Banner -->
     <div :class="['banner', bannerVisible ? 'show' : '', bannerType]">{{ bannerMsg }}</div>
 
-    <div class="grid">
-      <!-- TIMER CARD -->
-      <div class="card timer-card" style="grid-column: 1 / -1">
+    <!-- DESKTOP SPLIT GRID LAYOUT -->
+    <div class="desktop-grid">
+      
+      <!-- KOLOM KIRI: MAIN TIMER VISUAL -->
+      <div class="card timer-main-card">
         <div :class="['mode-badge', isBreak ? 'break' : '']">
           {{ isBreak ? 'BREAK TIME' : 'FOCUS TIME' }}
         </div>
         
-        <div>
+        <div class="time-display-wrapper">
           <div class="time-display">{{ timeDisplay }}</div>
         </div>
         
         <div class="progress-bar">
           <div :class="['progress-fill', isBreak ? 'break' : '']" :style="{ width: progressPct + '%' }"></div>
         </div>
-
-        <!-- Goal -->
-        <div class="goal-section">
-          <div class="goal-header">
-            <span class="goal-label">Target sesi hari ini</span>
-            <span class="goal-count">{{ completedSessions }} / {{ goalTarget }}</span>
-          </div>
-          <div class="goal-bar">
-            <div class="goal-fill" :style="{ width: goalPct + '%' }"></div>
-          </div>
-          <div class="goal-input-row">
-            <label>Target:</label>
-            <input type="number" v-model.number="goalTarget" min="1" max="20" @change="saveStorage" />
-            <span style="font-size:11px;color:var(--muted)">sesi per hari</span>
-          </div>
-        </div>
-
-        <div class="settings-row">
-          <label>Fokus (mnt): <input type="number" v-model.number="focusMin" min="1" :disabled="running" @change="onFocusMinChange" /></label>
-          <label>Istirahat (mnt): <input type="number" v-model.number="breakMin" min="1" :disabled="running" @change="onBreakMinChange" /></label>
-        </div>
-        
-        <div class="btn-row">
-          <button :class="['btn', 'btn-start', running ? 'running' : '']" @click="toggleTimer">
-            {{ running ? 'PAUSE' : 'START' }}
-          </button>
-          <button class="btn btn-reset" @click="resetTimer">RESET</button>
-          <button class="btn btn-mute" @click="toggleMute">{{ muted ? '🔇' : '🔊' }}</button>
-        </div>
-        
-        <div class="stats-row">
-          <div class="stat-item"><div class="stat-val">{{ completedSessions }}</div><div class="stat-lbl">🍅 Sesi</div></div>
-          <div class="stat-item"><div class="stat-val">{{ totalFocusDisplay }}</div><div class="stat-lbl">⏱ Total fokus</div></div>
-        </div>
       </div>
 
-      <!-- SPOTIFY -->
-      <div class="card spotify-section">
-        <div class="card-title">🎧 Spotify — Lo-fi Mix</div>
-        <iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      <!-- KOLOM KANAN: CONTROLS, SETTINGS, & AUDIO -->
+      <div class="right-column">
+        
+        <!-- CARD CONTROL & CONFIG -->
+        <div class="card control-card">
+          <!-- Goal Section -->
+          <div class="goal-section">
+            <div class="goal-header">
+              <span class="goal-label">Target sesi hari ini</span>
+              <span class="goal-count">{{ completedSessions }} / {{ goalTarget }}</span>
+            </div>
+            <div class="goal-bar">
+              <div class="goal-fill" :style="{ width: goalPct + '%' }"></div>
+            </div>
+            <div class="goal-input-row">
+              <label>Target:</label>
+              <input type="number" v-model.number="goalTarget" min="1" max="20" @change="saveStorage" />
+              <span class="sub-lbl">sesi per hari</span>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Settings Row -->
+          <div class="settings-row">
+            <label>⏱️ Fokus: <input type="number" v-model.number="focusMin" min="1" :disabled="running" @change="onFocusMinChange" /> <span class="sub-lbl">mnt</span></label>
+            <label>☕ Istirahat: <input type="number" v-model.number="breakMin" min="1" :disabled="running" @change="onBreakMinChange" /> <span class="sub-lbl">mnt</span></label>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="btn-row">
+            <button :class="['btn', 'btn-start', running ? 'running' : '']" @click="toggleTimer">
+              {{ running ? 'PAUSE' : 'START' }}
+            </button>
+            <button class="btn btn-reset" @click="resetTimer">RESET</button>
+            <button class="btn btn-mute" @click="toggleMute">{{ muted ? '🔇' : '🔊' }}</button>
+          </div>
+          
+          <hr class="divider" />
+
+          <!-- Quick Stats -->
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-lbl">Sesi Selesai</div>
+              <div class="stat-val">🍅 {{ completedSessions }} Sesi</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-lbl">Waktu Fokus</div>
+              <div class="stat-val">⏱️ {{ totalFocusDisplay }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD SPOTIFY -->
+        <div class="card spotify-card">
+          <div class="card-title">🎧 Spotify Player</div>
+          <iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+
       </div>
     </div>
   </div>
@@ -161,7 +180,6 @@ function updateTitle(m, s) {
   }
 }
 
-// Reset timer mengembalikan waktu ke awal sesuai seting fokus/istirahat
 function resetTimer() {
   clearInterval(timerInterval);
   running.value  = false;
@@ -216,7 +234,7 @@ function onBreakMinChange() {
   if (!running.value && isBreak.value) totalSec.value = breakMin.value * 60;
 }
 
-// ─── AUDIO (BEEP SYSTEM) ─────────────────────────────────────────────
+// ─── AUDIO ───────────────────────────────────────────────────────────
 function getAudioCtx() {
   if (!audioCtx && typeof window !== 'undefined') {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -280,8 +298,8 @@ onUnmounted(() => {
   --green: #4caf50;
   --pixel: 'Press Start 2P', monospace;
   --sans: 'Inter', sans-serif;
-  --radius: 8px;
-  --radius-lg: 14px;
+  --radius: 10px;
+  --radius-lg: 18px;
 }
 
 .app, .app * { 
@@ -290,91 +308,152 @@ onUnmounted(() => {
   padding: 0;
 }
 
+/* Dioptimalkan khusus layar Desktop/Laptop */
 .app { 
   font-family: var(--sans); 
   color: var(--text);
-  max-width: 500px; /* Ukuran menyempit agar pas dan proporsional */
-  margin: 0 auto; 
-  padding: 1.5rem 1rem 3rem; 
+  max-width: 850px; 
+  margin: 4vh auto; 
+  padding: 0 1.5rem;
   width: 100%;
 }
 
-.header { text-align: center; margin-bottom: 1.5rem; }
-.header h1 { font-family: var(--pixel); font-size: clamp(0.8rem, 2.5vw, 1.1rem); color: var(--accent2); letter-spacing: 4px; }
-.header p { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.header { text-align: left; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.header h1 { font-family: var(--pixel); font-size: 1.4rem; color: var(--accent2); letter-spacing: 4px; }
+.header p { font-size: 13px; color: var(--muted); margin-top: 6px; }
 
-.grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+/* LAYOUT GRID UTAMA DESKTOP */
+.desktop-grid { 
+  display: grid; 
+  grid-template-columns: 1.2fr 1fr; 
+  gap: 1.5rem; 
+  align-items: start;
+}
 
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; width: 100%; min-width: 0; overflow: hidden; }
-.card-title { font-family: var(--pixel); font-size: 0.55rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; }
+@media (max-width: 700px) {
+  .desktop-grid { grid-template-columns: 1fr; }
+}
 
-/* --- RE-DESIGN KOTAK TIMER ANTI MELUBER --- */
-.timer-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
-.mode-badge { display: inline-block; font-family: var(--pixel); font-size: 0.5rem; letter-spacing: 3px; padding: 4px 10px; border-radius: 4px; margin-bottom: 0.75rem; background: rgba(197,153,182,0.15); color: var(--accent2); border: 1px solid rgba(197,153,182,0.3); }
-.mode-badge.break { background: rgba(76,175,80,0.15); color: #7ee882; border-color: rgba(76,175,80,0.3); }
+.card { 
+  background: var(--surface); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-lg); 
+  padding: 1.5rem; 
+  width: 100%; 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.card-title { font-family: var(--pixel); font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; }
+
+/* KOLOM KIRI: TIMER BESAR */
+.timer-main-card { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  min-height: 380px;
+}
+
+.mode-badge { 
+  font-family: var(--pixel); 
+  font-size: 0.6rem; 
+  letter-spacing: 3px; 
+  padding: 6px 14px; 
+  border-radius: 6px; 
+  margin-bottom: 2rem; 
+  background: rgba(197,153,182,0.12); 
+  color: var(--accent2); 
+  border: 1px solid rgba(197,153,182,0.25); 
+}
+.mode-badge.break { background: rgba(76,175,80,0.12); color: #7ee882; border-color: rgba(76,175,80,0.25); }
+
+.time-display-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
 
 .time-display { 
   font-family: var(--pixel); 
-  font-size: clamp(1.4rem, 7vw, 3.2rem); 
+  font-size: 4rem; 
   color: var(--text); 
-  background: #090918; 
-  border: 3px solid var(--accent2); 
+  background: #05050f; 
+  border: 4px solid var(--accent2); 
   border-radius: var(--radius); 
-  padding: 0.75rem 0.5rem; 
-  display: block;
-  margin: 0 auto 0.75rem auto; 
-  width: 100%; 
-  max-width: 320px;
+  padding: 1.5rem 0; 
+  width: 100%;
+  max-width: 340px;
   text-align: center;
-  white-space: nowrap;
+  letter-spacing: 2px;
+  box-shadow: inset 0 4px 12px rgba(0,0,0,0.5);
 }
 
-.progress-bar { width: 100%; max-width: 320px; height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-bottom: 1rem; }
+.progress-bar { width: 100%; max-width: 340px; height: 10px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 1s linear; }
 .progress-fill.break { background: var(--green); }
 
-/* --- SETTINGS ROW --- */
-.settings-row { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; width: 100%; }
-.settings-row label { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.settings-row input[type=number] { width: 52px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 4px 6px; font-size: 12px; font-family: var(--pixel); text-align: center; outline: none; }
-.settings-row input:disabled { opacity: 0.4; }
+/* KOLOM KANAN: KONTROL & SPOTIFY */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
 
-/* --- BUTTONS --- */
-.btn-row { display: flex; justify-content: center; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; width: 100%; }
-.btn { font-family: var(--pixel); font-size: 0.55rem; padding: 0.55rem 1.1rem; border-radius: 5px; border: none; cursor: pointer; transition: transform 0.1s, opacity 0.1s; letter-spacing: 1px; }
-.btn:hover { transform: translateY(-2px); opacity: 0.9; }
-.btn-start { background: var(--accent); color: #111; }
-.btn-start.running { background: var(--green); color: #fff; }
-.btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-.btn-mute { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 0.9rem; padding: 0.4rem 0.6rem; border-radius: 5px; }
+.control-card {
+  padding: 1.5rem;
+}
 
-/* --- STATS --- */
-.stats-row { display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; width: 100%; }
-.stat-item { text-align: center; }
-.stat-val { font-family: var(--pixel); font-size: 0.75rem; color: var(--accent); }
-.stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.divider {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 1.25rem 0;
+}
 
-/* --- BANNERS --- */
-.banner { display: none; padding: 0.5rem 1rem; border-radius: var(--radius); font-size: 12px; text-align: center; margin-bottom: 0.75rem; font-weight: 500; width: 100%; }
-.banner.show { display: block; }
-.banner.break-banner { background: rgba(76,175,80,0.15); color: #7ee882; border: 1px solid rgba(76,175,80,0.3); }
-.banner.done-banner { background: rgba(240,160,75,0.15); color: var(--accent); border: 1px solid rgba(240,160,75,0.3); }
+.sub-lbl { font-size: 11px; color: var(--muted); }
 
-/* --- GOALS --- */
-.goal-section { margin-bottom: 1rem; width: 100%; max-width: 320px; }
-.goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
-.goal-label { font-size: 12px; color: var(--muted); }
-.goal-count { font-family: var(--pixel); font-size: 0.6rem; color: var(--accent); }
-.goal-bar { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+/* GOALS SECTION */
+.goal-section { width: 100%; }
+.goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.goal-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.goal-count { font-family: var(--pixel); font-size: 0.65rem; color: var(--accent); }
+.goal-bar { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
 .goal-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width 0.4s ease; }
-.goal-input-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0.5rem; }
-.goal-input-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.goal-input-row input { width: 50px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 3px 6px; font-size: 12px; text-align: center; outline: none; font-family: var(--pixel); }
+.goal-input-row { display: flex; align-items: center; gap: 8px; margin-top: 0.75rem; font-size: 12px; color: var(--muted); }
+.goal-input-row input { width: 50px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 4px; font-size: 12px; text-align: center; outline: none; font-family: var(--pixel); }
 
-/* --- SPOTIFY --- */
-.spotify-section iframe { border-radius: var(--radius); }
+/* SETTINGS INPUTS */
+.settings-row { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+.settings-row label { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.settings-row input[type=number] { width: 55px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 5px; font-size: 12px; font-family: var(--pixel); text-align: center; outline: none; margin-left: auto; }
+.settings-row input:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* --- NOTIF BAR --- */
-.notif-bar { background: rgba(91,155,213,0.12); border: 1px solid rgba(91,155,213,0.3); border-radius: var(--radius); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #80b8e8; margin-bottom: 1rem; width: 100%; gap: 10px; }
-.notif-bar button { font-size: 11px; background: rgba(91,155,213,0.2); border: 1px solid rgba(91,155,213,0.4); color: #80b8e8; border-radius: 4px; padding: 3px 10px; cursor: pointer; flex-shrink: 0; }
+/* CONTROLS BUTTONS */
+.btn-row { display: flex; gap: 0.5rem; margin-top: 1.25rem; width: 100%; }
+.btn { font-family: var(--pixel); font-size: 0.6rem; padding: 0.75rem 1rem; border-radius: 6px; border: none; cursor: pointer; transition: transform 0.1s, opacity 0.1s; letter-spacing: 1px; }
+.btn:hover { transform: translateY(-2px); opacity: 0.95; }
+.btn-start { flex: 2; background: var(--accent); color: #111; font-weight: bold; }
+.btn-start.running { background: var(--green); color: #fff; }
+.btn-reset { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-mute { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 1rem; padding: 0.5rem 0.75rem; border-radius: 6px; }
+
+/* DESKTOP STATS TABS */
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
+.stat-lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-val { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+/* SPOTIFY */
+.spotify-card { padding: 1rem; }
+.spotify-card iframe { border-radius: var(--radius); display: block; }
+
+/* NOTIF & BANNERS BAR */
+.banner { display: none; padding: 0.6rem 1rem; border-radius: var(--radius); font-size: 12px; text-align: center; margin-bottom: 1rem; font-weight: 500; width: 100%; }
+.banner.show { display: block; }
+.banner.break-banner { background: rgba(76,175,80,0.12); color: #7ee882; border: 1px solid rgba(76,175,80,0.2); }
+.banner.done-banner { background: rgba(240,160,75,0.12); color: var(--accent); border: 1px solid rgba(240,160,75,0.2); }
+
+.notif-bar { background: rgba(91,155,213,0.1); border: 1px solid rgba(91,155,213,0.25); border-radius: var(--radius); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #80b8e8; margin-bottom: 1rem; width: 100%; gap: 10px; }
+.notif-bar button { font-size: 11px; background: rgba(91,155,213,0.18); border: 1px solid rgba(91,155,213,0.3); color: #80b8e8; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: background 0.2s; }
+.notif-bar button:hover { background: rgba(91,155,213,0.3); }
 </style>
