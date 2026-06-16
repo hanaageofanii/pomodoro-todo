@@ -166,34 +166,45 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
+/* --- 1. GLOBAL FIX UNTUK MAKSIMAL RESPONSIVE --- */
+.timer, .timer * {
+  box-sizing: border-box; /* Memastikan padding tidak menambah lebar elemen */
+}
+
 .timer {
   text-align: center;
   margin-bottom: 2rem;
   user-select: none;
-  /* Tambahan: berikan padding kanan-kiri agar tidak menempel di layar HP */
-  padding: 0 1rem; 
-  max-width: 450px;
+  width: 100%;
+  max-width: 400px; /* Menjaga agar pas dengan container ungu kamu */
   margin-left: auto;
   margin-right: auto;
+  padding: 0 0.5rem; /* Memberi ruang napas di kanan-kiri */
 }
+
 .timer h2 {
   font-size: 0.8rem;
   letter-spacing: 3px;
   margin-bottom: 0.5rem;
   color: #ffb4a2;
 }
+
+/* --- 2. PERBAIKAN KOTAK HITAM TIMER --- */
 .time-display {
-  /* Diubah dari 3rem menjadi clamp agar ukurannya dinamis mengikuti lebar layar */
-  font-size: clamp(1.8rem, 8vw, 3rem);
+  /* Menggunakan clamp agar teks mengecil otomatis di layar sempit */
+  font-size: clamp(1.8rem, 7vw, 2.8rem); 
   background: #222;
   color: #eee;
-  padding: 1rem; /* disederhanakan agar tidak terlalu memakan ruang */
+  /* Padding horizontal dikecilkan agar tidak mendorong kotak keluar */
+  padding: 1rem 0.5rem; 
   border: 4px solid #c599b6;
   border-radius: 6px;
   margin-bottom: 0.7rem;
   font-family: 'Press Start 2P', cursive, monospace;
-  box-sizing: border-box;
+  width: 100%; /* Memaksa kotak selalu selebar container-nya */
+  display: block;
 }
+
 .progress-bar {
   width: 100%;
   height: 10px;
@@ -202,34 +213,37 @@ onUnmounted(() => {
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 1rem;
-  box-sizing: border-box;
 }
+
 .progress-fill {
   height: 100%;
   background: #f0a04b;
   transition: width 1s linear;
 }
+
 .progress-fill.break {
   background: #4caf50;
 }
+
+/* --- 3. PERBAIKAN SETTING INPUT --- */
 .settings {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap; /* Agar input turun ke bawah jika layar sangat sempit */
+  gap: 0.8rem;
+  flex-wrap: wrap; /* Supaya kalau layar sangat sempit, inputnya turun kebawah */
 }
+
 .settings label {
-  /* Diubah menjadi clamp agar teks label mengecil di HP jadul */
   font-size: clamp(0.55rem, 2vw, 0.7rem);
   color: #f9f9f9;
   font-family: 'Press Start 2P', cursive, monospace;
-  user-select: none;
   display: flex;
   align-items: center;
 }
+
 .settings input {
-  width: 3.5rem; /* Sedikit dilebarkan agar angka 2 digit aman */
+  width: 3.2rem;
   margin-left: 0.3rem;
   font-size: clamp(0.55rem, 2vw, 0.7rem);
   padding: 0.2rem;
@@ -240,79 +254,82 @@ onUnmounted(() => {
   box-shadow: 3px 3px 0 #444;
   font-family: 'Press Start 2P', cursive, monospace;
   outline: none;
-  box-sizing: border-box;
 }
+
+/* --- 4. PERBAIKAN TOMBOL --- */
 .buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap; /* Tombol akan menyesuaikan diri jika space kurang */
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  flex-wrap: wrap;
 }
+
 .buttons button {
   background: #f0a04b;
   color: #222;
   font-weight: bold;
-  /* Menggunakan clamp untuk ukuran teks tombol */
-  font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+  font-size: clamp(0.65rem, 2vw, 0.8rem);
   padding: 0.5rem 0.8rem;
-  margin: 0; /* Margin dihapus karena sudah diatur oleh gap */
   border-radius: 4px;
   box-shadow: 2px 2px 0 #fada7a;
   transition: transform 0.1s;
   cursor: pointer;
-  white-space: nowrap; /* Teks button tidak akan patah ke bawah */
 }
+
 .buttons button.running {
   background: #4caf50;
   box-shadow: 2px 2px 0 #367c39;
 }
+
 .buttons button:hover:not(:disabled) {
   filter: brightness(1.1);
 }
+
 .buttons button:hover {
   transform: translateY(-2px);
 }
+
 .mute-btn {
   background: transparent !important;
   box-shadow: none !important;
-  font-size: 1.2rem !important;
+  font-size: 1.1rem;
   padding: 0.3rem !important;
 }
+
+/* --- 5. STATISTIK --- */
 .stats {
-  /* Menggunakan clamp agar teks statistik tidak meluber keluar layar */
   font-size: clamp(0.5rem, 1.8vw, 0.6rem);
   color: #fada7a;
   font-family: 'Press Start 2P', cursive, monospace;
   display: flex;
   justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
   gap: 0.3rem;
+  flex-wrap: wrap;
 }
+
 .stats .sep {
   margin: 0 0.2rem;
   opacity: 0.5;
 }
+
 .settings input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* --- RESPONSIVE BREAKPOINT FOR SMALL DEVICES --- */
-@media (max-width: 380px) {
-  .settings {
-    flex-direction: column; /* Label fokus & istirahat bertumpuk vertikal di HP sangat kecil */
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .stats .sep {
-    display: none; /* Sembunyikan garis pemisah '|' jika mode vertikal */
-  }
-  .stats {
-    flex-direction: column; /* Statistik bertumpuk atas-bawah */
-    gap: 0.4rem;
-  }
+/* --- BONUS FIX: DAFTAR TUGAS (Jika komponen input tugas ada di file yang sama) --- */
+/* Pastikan input text tugas kamu menggunakan selektor yang sesuai, ini contoh jika strukturnya mirip */
+.daftar-tugas-container {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.daftar-tugas-container input {
+  flex: 1; /* Biar inputnya fleksibel mengambil sisa ruang tanpa meluber */
+  min-width: 0; /* Trik CSS vital agar flex item bisa mengecil sempurna */
 }
 </style>
