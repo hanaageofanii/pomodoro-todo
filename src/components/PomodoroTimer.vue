@@ -166,45 +166,54 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
-/* --- 1. GLOBAL FIX UNTUK MAKSIMAL RESPONSIVE --- */
+/* --- 1. RESET GLOBAL UNTUK KOMPONEN INI --- */
 .timer, .timer * {
-  box-sizing: border-box; /* Memastikan padding tidak menambah lebar elemen */
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+/* --- 2. KONTAINER UTAMA (Si Ungu/Coklat) --- */
+/* Catatan: Pastikan elemen pembungkus paling luar di komponenmu menggunakan class .timer ini */
 .timer {
   text-align: center;
-  margin-bottom: 2rem;
-  user-select: none;
   width: 100%;
-  max-width: 400px; /* Menjaga agar pas dengan container ungu kamu */
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 0.5rem; /* Memberi ruang napas di kanan-kiri */
+  max-width: 400px; /* Batas maksimal lebar agar rapi di desktop */
+  margin: 0 auto 2rem auto;
+  
+  /* PADDING DIKECILKAN: Ini kunci agar elemen di dalam punya ruang lebih di HP */
+  padding: 1.5rem 1rem; 
+  
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Memberikan jarak antar elemen secara vertikal otomatis */
 }
 
 .timer h2 {
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2.5vw, 0.9rem);
   letter-spacing: 3px;
-  margin-bottom: 0.5rem;
   color: #ffb4a2;
+  margin-bottom: 0.2rem;
 }
 
-/* --- 2. PERBAIKAN KOTAK HITAM TIMER --- */
+/* --- 3. KOTAK HITAM TIMER (SEKARANG DIJAMIN AMAN) --- */
 .time-display {
-  /* Menggunakan clamp agar teks mengecil otomatis di layar sempit */
-  font-size: clamp(1.8rem, 7vw, 2.8rem); 
+  /* Menggunakan vw (viewport width) agar ukurannya mengecil ekstrim jika layar sangat sempit */
+  font-size: clamp(1.6rem, 8vw, 3rem); 
   background: #222;
   color: #eee;
-  /* Padding horizontal dikecilkan agar tidak mendorong kotak keluar */
-  padding: 1rem 0.5rem; 
+  padding: 0.8rem 0.2rem; /* Padding horizontal seminimal mungkin */
   border: 4px solid #c599b6;
   border-radius: 6px;
-  margin-bottom: 0.7rem;
   font-family: 'Press Start 2P', cursive, monospace;
-  width: 100%; /* Memaksa kotak selalu selebar container-nya */
-  display: block;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+/* --- 4. PROGRESS BAR --- */
 .progress-bar {
   width: 100%;
   height: 10px;
@@ -212,28 +221,23 @@ onUnmounted(() => {
   border: 2px solid #574964;
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 1rem;
 }
-
 .progress-fill {
   height: 100%;
   background: #f0a04b;
   transition: width 1s linear;
 }
-
 .progress-fill.break {
   background: #4caf50;
 }
 
-/* --- 3. PERBAIKAN SETTING INPUT --- */
+/* --- 5. SETTING INPUT (BISA VERTIKAL KALAU LAYAR MINIM) --- */
 .settings {
-  margin-bottom: 1rem;
   display: flex;
   justify-content: center;
   gap: 0.8rem;
-  flex-wrap: wrap; /* Supaya kalau layar sangat sempit, inputnya turun kebawah */
+  flex-wrap: wrap;
 }
-
 .settings label {
   font-size: clamp(0.55rem, 2vw, 0.7rem);
   color: #f9f9f9;
@@ -241,10 +245,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
 }
-
 .settings input {
-  width: 3.2rem;
-  margin-left: 0.3rem;
+  width: 3.5rem;
+  margin-left: 0.4rem;
   font-size: clamp(0.55rem, 2vw, 0.7rem);
   padding: 0.2rem;
   border-radius: 4px;
@@ -256,80 +259,96 @@ onUnmounted(() => {
   outline: none;
 }
 
-/* --- 4. PERBAIKAN TOMBOL --- */
+/* --- 6. TOMBOL-TOMBOL --- */
 .buttons {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.7rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
 }
-
 .buttons button {
   background: #f0a04b;
   color: #222;
   font-weight: bold;
-  font-size: clamp(0.65rem, 2vw, 0.8rem);
+  font-size: clamp(0.65rem, 2.2vw, 0.8rem);
   padding: 0.5rem 0.8rem;
   border-radius: 4px;
   box-shadow: 2px 2px 0 #fada7a;
   transition: transform 0.1s;
   cursor: pointer;
 }
-
 .buttons button.running {
   background: #4caf50;
   box-shadow: 2px 2px 0 #367c39;
 }
-
 .buttons button:hover:not(:disabled) {
   filter: brightness(1.1);
 }
-
 .buttons button:hover {
   transform: translateY(-2px);
 }
-
 .mute-btn {
   background: transparent !important;
   box-shadow: none !important;
   font-size: 1.1rem;
-  padding: 0.3rem !important;
+  padding: 0.2rem !important;
 }
 
-/* --- 5. STATISTIK --- */
+/* --- 7. STATISTIK --- */
 .stats {
   font-size: clamp(0.5rem, 1.8vw, 0.6rem);
   color: #fada7a;
   font-family: 'Press Start 2P', cursive, monospace;
   display: flex;
   justify-content: center;
-  gap: 0.3rem;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 0.3rem;
 }
-
 .stats .sep {
-  margin: 0 0.2rem;
   opacity: 0.5;
 }
-
 .settings input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* --- BONUS FIX: DAFTAR TUGAS (Jika komponen input tugas ada di file yang sama) --- */
-/* Pastikan input text tugas kamu menggunakan selektor yang sesuai, ini contoh jika strukturnya mirip */
-.daftar-tugas-container {
-  display: flex;
-  width: 100%;
-  gap: 0.5rem;
-  padding: 0 0.5rem;
+/* --- 8. PERBAIKAN FORM DAFTAR TUGAS DI BAWAH --- */
+/* Sesuaikan class di bawah ini dengan nama class pembungkus input tugas & tombol TAMBAH-mu */
+.todo-form, 
+div:has(> input[placeholder*="tugas"]) { 
+  display: flex !important;
+  width: 100% !important;
+  gap: 0.4rem !important;
 }
 
-.daftar-tugas-container input {
-  flex: 1; /* Biar inputnya fleksibel mengambil sisa ruang tanpa meluber */
-  min-width: 0; /* Trik CSS vital agar flex item bisa mengecil sempurna */
+/* Memaksa input tugas mengalah dan mengecil mengikuti container */
+.todo-form input, 
+input[placeholder*="tugas"] {
+  flex: 1 !important;
+  min-width: 0 !important; 
+  font-size: clamp(0.6rem, 2vw, 0.8rem) !important;
+}
+
+.todo-form button,
+button:has(text:contains("TAMBAH")) {
+  font-size: clamp(0.6rem, 2vw, 0.8rem) !important;
+  white-space: nowrap;
+}
+
+/* --- BREAKPOINT HP SANGAT KECIL (< 360px) --- */
+@media (max-width: 360px) {
+  .settings {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .stats {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .stats .sep {
+    display: none;
+  }
 }
 </style>
