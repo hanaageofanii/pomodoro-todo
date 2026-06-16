@@ -21,9 +21,14 @@
       </button>
       <button @click="resetTimer">RESET</button>
       <button @click="toggleMute" class="mute-btn">{{ muted ? '🔇' : '🔊' }}</button>
+      <button @click="toggleAutoStart" class="mute-btn" :title="autoStart ? 'Auto-lanjut: ON' : 'Auto-lanjut: OFF'">
+        {{ autoStart ? '🔁' : '⏸️🔁' }}
+      </button>
     </div>
     <div class="stats">
-      <span>🍅 Sesi selesai: {{ completedSessions }}</span>
+      <span>🍅 Sesi fokus: {{ completedSessions }}</span>
+      <span class="sep">|</span>
+      <span>⏱️ Total fokus: {{ totalFocusLabel }}</span>
     </div>
   </div>
   <iframe
@@ -39,7 +44,6 @@
 </template>
 <script setup>
 import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
-
 const focusMinutes = ref(25)
 const breakMinutes = ref(5)
 const FOCUS_DURATION = () => focusMinutes.value * 60
@@ -47,27 +51,43 @@ const BREAK_DURATION = () => breakMinutes.value * 60
 const time = ref(FOCUS_DURATION())
 const isBreak = ref(false)
 const running = ref(false)
-const muted = ref(false)
-const completedSessions = ref(0)
 let timer
-
 const minutes = computed(() => String(Math.floor(time.value / 60)).padStart(2, '0'))
 const seconds = computed(() => String(time.value % 60).padStart(2, '0'))
 
+// --- INOVASI: progress bar ---
 const totalDuration = computed(() => (isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()))
 const progressPercent = computed(() => {
   if (totalDuration.value === 0) return 0
   return ((totalDuration.value - time.value) / totalDuration.value) * 100
 })
 
-// --- Audio: bikin bunyi beep pakai Web Audio API, tanpa file eksternal ---
+// --- INOVASI: statistik ---
+const completedSessions = ref(0)
+const totalFocusSeconds = ref(0)
+const totalFocusLabel = computed(() => {
+  const h = Math.floor(totalFocusSeconds.value / 3600)
+  const m = Math.floor((totalFocusSeconds.value % 3600) / 60)
+  return h > 0 ? `${h}j ${m}m` : `${m}m`
+})
+
+// --- INOVASI: mute & auto-start toggle ---
+const muted = ref(false)
+const autoStart = ref(true) // kalau true, sesi berikutnya otomatis lanjut tanpa klik START
+function toggleMute() {
+  muted.value = !muted.value
+}
+function toggleAutoStart() {
+  autoStart.value = !autoStart.value
+}
+
+// --- INOVASI: suara beep via Web Audio API, tanpa file eksternal ---
 let audioCtx
 function playBeep() {
   if (muted.value) return
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
     const now = audioCtx.currentTime
-    // 3 beep berurutan
     for (let i = 0; i < 3; i++) {
       const osc = audioCtx.createOscillator()
       const gain = audioCtx.createGain()
@@ -86,25 +106,20 @@ function playBeep() {
   }
 }
 
-function toggleMute() {
-  muted.value = !muted.value
-}
-
-// --- Browser Notification ---
+// --- INOVASI: browser notification ---
 function notify(title, body) {
   if (!('Notification' in window)) return
   if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '🍅' })
+    new Notification(title, { body })
   }
 }
-
 onMounted(() => {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission()
   }
-  // update title tab biar terlihat walau minimize
 })
 
+// --- INOVASI: judul tab ikut menampilkan countdown ---
 watch([time, running], () => {
   document.title = running.value
     ? `${minutes.value}:${seconds.value} - ${isBreak.value ? 'Break' : 'Focus'}`
@@ -114,19 +129,29 @@ watch([time, running], () => {
 function tick() {
   if (time.value > 0) {
     time.value--
+    if (!isBreak.value) totalFocusSeconds.value++
   } else {
     if (!isBreak.value) completedSessions.value++
     isBreak.value = !isBreak.value
     time.value = isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()
     playBeep()
-    const msg = isBreak.value ? 'Waktunya istirahat!' : 'Waktunya fokus!'
-    notify('Pomodoro Timer', msg)
+    notify('Pomodoro Timer', isBreak.value ? 'Waktunya istirahat!' : 'Waktunya fokus!')
+
+    // INOVASI KUNCI: kalau autoStart mati, timer benar-benar berhenti di sini
+    // (sesuai sifat "timer pada umumnya" yang kamu minta sebelumnya).
+    // Kalau autoStart aktif, interval yang sudah jalan otomatis lanjut karena
+    // kita TIDAK menyentuh `running` ataupun `clearInterval` di branch ini.
+    if (!autoStart.value) {
+      running.value = false
+      clearInterval(timer)
+    }
   }
 }
 
 function toggleTimer() {
   running.value = !running.value
   if (running.value) {
+    clearInterval(timer) // cegah dobel interval kalau toggle dipencet cepat
     timer = setInterval(tick, 1000)
   } else {
     clearInterval(timer)
@@ -250,9 +275,13 @@ onUnmounted(() => {
   padding: 0.3rem !important;
 }
 .stats {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: #fada7a;
   font-family: 'Press Start 2P', cursive, monospace;
+}
+.stats .sep {
+  margin: 0 0.5rem;
+  opacity: 0.5;
 }
 .settings input:disabled {
   opacity: 0.5;
