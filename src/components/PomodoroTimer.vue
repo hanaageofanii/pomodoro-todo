@@ -1,459 +1,279 @@
 <template>
-  <div class="app">
-
-    <!-- Notif Bar -->
-    <div v-if="showNotifBar" class="notif-bar">
-      <span>Aktifkan notifikasi supaya dapat pengingat otomatis</span>
-      <button @click="requestNotif">Aktifkan</button>
+  <div class="timer">
+    <h2>{{ isBreak ? 'BREAK TIME' : 'FOCUS TIME' }}</h2>
+    <div class="time-display">{{ minutes }}:{{ seconds }}</div>
+    <div class="progress-bar">
+      <div class="progress-fill" :class="{ break: isBreak }" :style="{ width: progressPercent + '%' }"></div>
     </div>
-
-    <!-- Banner -->
-    <div :class="['banner', bannerVisible ? 'show' : '', bannerType]">{{ bannerMsg }}</div>
-
-    <!-- DESKTOP SPLIT GRID LAYOUT -->
-    <div class="desktop-grid">
-      
-      <!-- KOLOM KIRI: MAIN TIMER VISUAL -->
-      <div class="card timer-main-card">
-        <div :class="['mode-badge', isBreak ? 'break' : '']">
-          {{ isBreak ? 'BREAK TIME' : 'FOCUS TIME' }}
-        </div>
-        
-        <div class="time-display-wrapper">
-          <div class="time-display">{{ timeDisplay }}</div>
-        </div>
-        
-        <div class="progress-bar">
-          <div :class="['progress-fill', isBreak ? 'break' : '']" :style="{ width: progressPct + '%' }"></div>
-        </div>
-      </div>
-
-      <!-- KOLOM KANAN: CONTROLS, SETTINGS, & AUDIO -->
-      <div class="right-column">
-        
-        <!-- CARD CONTROL & CONFIG -->
-        <div class="card control-card">
-          <!-- Goal Section -->
-          <div class="goal-section">
-            <div class="goal-header">
-              <span class="goal-label">Target sesi hari ini</span>
-              <span class="goal-count">{{ completedSessions }} / {{ goalTarget }}</span>
-            </div>
-            <div class="goal-bar">
-              <div class="goal-fill" :style="{ width: goalPct + '%' }"></div>
-            </div>
-            <div class="goal-input-row">
-              <label>Target:</label>
-              <input type="number" v-model.number="goalTarget" min="1" max="20" @change="saveStorage" />
-              <span class="sub-lbl">sesi per hari</span>
-            </div>
-          </div>
-
-          <hr class="divider" />
-
-          <!-- Settings Row -->
-          <div class="settings-row">
-            <label>⏱️ Fokus: <input type="number" v-model.number="focusMin" min="1" :disabled="running" @change="onFocusMinChange" /> <span class="sub-lbl">mnt</span></label>
-            <label>☕ Istirahat: <input type="number" v-model.number="breakMin" min="1" :disabled="running" @change="onBreakMinChange" /> <span class="sub-lbl">mnt</span></label>
-          </div>
-          
-          <!-- Action Buttons -->
-          <div class="btn-row">
-            <button :class="['btn', 'btn-start', running ? 'running' : '']" @click="toggleTimer">
-              {{ running ? 'PAUSE' : 'START' }}
-            </button>
-            <button class="btn btn-reset" @click="resetTimer">RESET</button>
-            <button class="btn btn-mute" @click="toggleMute">{{ muted ? '🔇' : '🔊' }}</button>
-          </div>
-          
-          <hr class="divider" />
-
-          <!-- Quick Stats -->
-          <div class="stats-row">
-            <div class="stat-item">
-              <div class="stat-lbl">Sesi Selesai</div>
-              <div class="stat-val">🍅 {{ completedSessions }} Sesi</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-lbl">Waktu Fokus</div>
-              <div class="stat-val">⏱️ {{ totalFocusDisplay }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CARD SPOTIFY -->
-        <div class="card spotify-card">
-          <div class="card-title">🎧 Spotify Player</div>
-          <iframe src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-        </div>
-
-      </div>
+    <div class="settings">
+      <label>
+        Fokus (menit):
+        <input type="number" min="1" v-model.number="focusMinutes" :disabled="running" />
+      </label>
+      <label>
+        Istirahat (menit):
+        <input type="number" min="1" v-model.number="breakMinutes" :disabled="running" />
+      </label>
+    </div>
+    <div class="buttons">
+      <button @click="toggleTimer" :class="{ running: running }">
+        {{ running ? 'PAUSE' : 'START' }}
+      </button>
+      <button @click="resetTimer">RESET</button>
+      <button @click="toggleMute" class="mute-btn">{{ muted ? '🔇' : '🔊' }}</button>
+    </div>
+    <div class="stats">
+      <span>🍅 Sesi fokus: {{ completedSessions }}</span>
+      <span class="sep">|</span>
+      <span>⏱️ Total fokus: {{ totalFocusLabel }}</span>
     </div>
   </div>
+  <iframe
+    style="border-radius: 6px"
+    src="https://open.spotify.com/embed/playlist/37i9dQZF1DX3rxVfibe1L0?utm_source=generator&theme=0"
+    width="100%"
+    height="80"
+    frameBorder="0"
+    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+    loading="lazy"
+  >
+  </iframe>
 </template>
-
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
+const focusMinutes = ref(25)
+const breakMinutes = ref(5)
+const FOCUS_DURATION = () => focusMinutes.value * 60
+const BREAK_DURATION = () => breakMinutes.value * 60
+const time = ref(FOCUS_DURATION())
+const isBreak = ref(false)
+const running = ref(false)
+let timer
+const minutes = computed(() => String(Math.floor(time.value / 60)).padStart(2, '0'))
+const seconds = computed(() => String(time.value % 60).padStart(2, '0'))
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────
-const TODAY = new Date().toISOString().slice(0, 10);
+// --- INOVASI: progress bar ---
+const totalDuration = computed(() => (isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()))
+const progressPercent = computed(() => {
+  if (totalDuration.value === 0) return 0
+  return ((totalDuration.value - time.value) / totalDuration.value) * 100
+})
 
-// ─── STATE ───────────────────────────────────────────────────────────
-const focusMin  = ref(25);
-const breakMin  = ref(5);
-const totalSec  = ref(25 * 60);
-const isBreak   = ref(false);
-const running   = ref(false);
-const muted     = ref(false);
-const completedSessions = ref(0);
-const totalFocusSec     = ref(0);
-const goalTarget = ref(4);
-const showNotifBar = ref(false);
-const bannerVisible = ref(false);
-const bannerMsg  = ref('');
-const bannerType = ref('');
+// --- INOVASI: statistik ---
+const completedSessions = ref(0)
+const totalFocusSeconds = ref(0)
+const totalFocusLabel = computed(() => {
+  const h = Math.floor(totalFocusSeconds.value / 3600)
+  const m = Math.floor((totalFocusSeconds.value % 3600) / 60)
+  return h > 0 ? `${h}j ${m}m` : `${m}m`
+})
 
-let timerInterval = null;
-let bannerTimeout = null;
-let audioCtx = null;
-
-// ─── COMPUTED ────────────────────────────────────────────────────────
-const pad = n => String(n).padStart(2, '0');
-
-const timeDisplay = computed(() => {
-  const m = Math.floor(totalSec.value / 60);
-  const s = totalSec.value % 60;
-  return pad(m) + ':' + pad(s);
-});
-
-const progressPct = computed(() => {
-  const total = isBreak.value ? breakMin.value * 60 : focusMin.value * 60;
-  return total > 0 ? ((total - totalSec.value) / total * 100) : 0;
-});
-
-const goalPct = computed(() => Math.min((completedSessions.value / goalTarget.value) * 100, 100));
-
-const totalFocusDisplay = computed(() => {
-  const h = Math.floor(totalFocusSec.value / 3600);
-  const m = Math.floor((totalFocusSec.value % 3600) / 60);
-  return h > 0 ? h + 'j ' + m + 'm' : m + 'm';
-});
-
-// ─── STORAGE ─────────────────────────────────────────────────────────
-function loadStorage() {
-  try {
-    const d = JSON.parse(localStorage.getItem('pomodoro_data') || '{}');
-    goalTarget.value = d.goalTarget || 4;
-    const dayData = d.dayData || {};
-    const today   = dayData[TODAY] || { sessions: 0, focusSec: 0 };
-    completedSessions.value = today.sessions;
-    totalFocusSec.value     = today.focusSec;
-  } catch(e) {}
+// --- INOVASI: mute toggle ---
+const muted = ref(false)
+function toggleMute() {
+  muted.value = !muted.value
 }
 
-function saveStorage() {
+// --- INOVASI: suara beep via Web Audio API, tanpa file eksternal ---
+let audioCtx
+function playBeep() {
+  if (muted.value) return
   try {
-    const d = JSON.parse(localStorage.getItem('pomodoro_data') || '{}');
-    d.goalTarget = goalTarget.value;
-    const dayData = d.dayData || {};
-    dayData[TODAY] = { sessions: completedSessions.value, focusSec: totalFocusSec.value };
-    d.dayData = dayData;
-    localStorage.setItem('pomodoro_data', JSON.stringify(d));
-  } catch(e) {}
-}
-
-// ─── TIMER ───────────────────────────────────────────────────────────
-function toggleTimer() {
-  if (!running.value) {
-    running.value = true;
-    clearInterval(timerInterval);
-    timerInterval = setInterval(tick, 1000);
-  } else {
-    running.value = false;
-    clearInterval(timerInterval);
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const now = audioCtx.currentTime
+    for (let i = 0; i < 3; i++) {
+      const osc = audioCtx.createOscillator()
+      const gain = audioCtx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = isBreak.value ? 660 : 880
+      gain.gain.setValueAtTime(0.0001, now + i * 0.3)
+      gain.gain.exponentialRampToValueAtTime(0.3, now + i * 0.3 + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.3 + 0.25)
+      osc.connect(gain)
+      gain.connect(audioCtx.destination)
+      osc.start(now + i * 0.3)
+      osc.stop(now + i * 0.3 + 0.3)
+    }
+  } catch (e) {
+    console.warn('Audio gagal diputar:', e)
   }
 }
 
-function updateTitle(m, s) {
-  if (typeof document !== 'undefined') {
-    document.title = running.value ? `${pad(m)}:${pad(s)} - ${isBreak.value ? 'Break' : 'Focus'}` : 'POMODORO';
+// --- INOVASI: browser notification ---
+function notify(title, body) {
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body })
+  }
+}
+onMounted(() => {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+})
+
+// --- INOVASI: judul tab ikut menampilkan countdown ---
+watch([time, running], () => {
+  document.title = running.value
+    ? `${minutes.value}:${seconds.value} - ${isBreak.value ? 'Break' : 'Focus'}`
+    : 'POMODORO TO-DO'
+})
+
+function tick() {
+  if (time.value > 0) {
+    time.value--
+    if (!isBreak.value) totalFocusSeconds.value++
+  } else {
+    if (!isBreak.value) completedSessions.value++
+    isBreak.value = !isBreak.value
+    time.value = isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()
+    playBeep()
+    notify('Pomodoro Timer', isBreak.value ? 'Waktunya istirahat!' : 'Waktunya fokus!')
+
+    // Timer SELALU berhenti begitu sesi habis.
+    // User harus klik START secara manual untuk mulai sesi berikutnya.
+    running.value = false
+    clearInterval(timer)
+  }
+}
+
+function toggleTimer() {
+  running.value = !running.value
+  if (running.value) {
+    clearInterval(timer) // cegah dobel interval kalau toggle dipencet cepat
+    timer = setInterval(tick, 1000)
+  } else {
+    clearInterval(timer)
   }
 }
 
 function resetTimer() {
-  clearInterval(timerInterval);
-  running.value  = false;
-  isBreak.value  = false;
-  totalSec.value = focusMin.value * 60;
-  bannerVisible.value = false;
-  if (typeof document !== 'undefined') document.title = 'POMODORO';
+  clearInterval(timer)
+  time.value = isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()
+  running.value = false
+  document.title = 'POMODORO TO-DO'
 }
 
-function tick() {
-  if (totalSec.value > 0) {
-    totalSec.value--;
-    if (!isBreak.value) totalFocusSec.value++;
-    const m = Math.floor(totalSec.value / 60);
-    const s = totalSec.value % 60;
-    updateTitle(m, s);
-  } else {
-    clearInterval(timerInterval);
-    running.value = false;
-    playBeep();
-    if (!isBreak.value) {
-      completedSessions.value++;
-      saveStorage();
-      isBreak.value  = true;
-      totalSec.value = breakMin.value * 60;
-      if (typeof document !== 'undefined') document.title = 'POMODORO';
-      showBanner('☕ Sesi fokus selesai! Waktunya istirahat — tekan START untuk mulai break.', 'break-banner');
-      sendNotif('Pomodoro — Fokus Selesai! ☕', 'Waktunya istirahat. Tekan START untuk mulai break.');
-    } else {
-      saveStorage();
-      isBreak.value  = false;
-      totalSec.value = focusMin.value * 60;
-      if (typeof document !== 'undefined') document.title = 'POMODORO';
-      showBanner('✅ Break selesai! Tekan START untuk sesi fokus baru.', 'done-banner');
-      sendNotif('Pomodoro — Break Selesai! ✅', 'Timer berhenti. Tekan START untuk sesi fokus baru.');
-    }
+watch([focusMinutes, breakMinutes], () => {
+  if (!running.value) {
+    time.value = isBreak.value ? BREAK_DURATION() : FOCUS_DURATION()
   }
-}
-
-function showBanner(msg, type) {
-  bannerMsg.value     = msg;
-  bannerType.value    = type;
-  bannerVisible.value = true;
-  clearTimeout(bannerTimeout);
-  bannerTimeout = setTimeout(() => { bannerVisible.value = false; }, 7000);
-}
-
-function onFocusMinChange() {
-  if (!running.value && !isBreak.value) totalSec.value = focusMin.value * 60;
-}
-function onBreakMinChange() {
-  if (!running.value && isBreak.value) totalSec.value = breakMin.value * 60;
-}
-
-// ─── AUDIO ───────────────────────────────────────────────────────────
-function getAudioCtx() {
-  if (!audioCtx && typeof window !== 'undefined') {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return audioCtx;
-}
-
-function toggleMute() { muted.value = !muted.value; }
-
-function playBeep() {
-  if (muted.value) return;
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  try {
-    const now = ctx.currentTime;
-    for (let i = 0; i < 3; i++) {
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = isBreak.value ? 660 : 880;
-      g.gain.setValueAtTime(0.0001, now + i * 0.3); g.gain.exponentialRampToValueAtTime(0.3, now + i * 0.3 + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.3 + 0.25);
-      o.connect(g); g.connect(ctx.destination); o.start(now + i * 0.3); o.stop(now + i * 0.3 + 0.3);
-    }
-  } catch(e) {}
-}
-
-function sendNotif(title, body) {
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body });
-  }
-}
-
-function requestNotif() {
-  if (typeof window !== 'undefined' && 'Notification' in window) {
-    Notification.requestPermission().then(p => { if (p === 'granted') showNotifBar.value = false; });
-  }
-}
-
-// ─── LIFECYCLE ───────────────────────────────────────────────────────
-onMounted(() => {
-  loadStorage();
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-    showNotifBar.value = true;
-  }
-});
+})
 
 onUnmounted(() => {
-  clearInterval(timerInterval);
-});
+  clearInterval(timer)
+  document.title = 'POMODORO TO-DO'
+})
 </script>
-
 <style scoped>
-.app {
-  --bg: #0d0d1a;
-  --surface: #14142a;
-  --surface2: #1c1c35;
-  --border: #2e2e52;
-  --text: #f0eeff;
-  --muted: #8b8aaa;
-  --accent: #f0a04b;
-  --accent2: #c599b6;
-  --green: #4caf50;
-  --pixel: 'Press Start 2P', monospace;
-  --sans: 'Inter', sans-serif;
-  --radius: 10px;
-  --radius-lg: 18px;
-}
-
-.app, .app * { 
-  box-sizing: border-box; 
-  margin: 0; 
-  padding: 0;
-}
-
-/* Dioptimalkan khusus layar Desktop/Laptop */
-.app { 
-  font-family: var(--sans); 
-  color: var(--text);
-  max-width: 850px; 
-  margin: 4vh auto; 
-  padding: 0 1.5rem;
-  width: 100%;
-}
-
-.header { text-align: left; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-.header h1 { font-family: var(--pixel); font-size: 1.4rem; color: var(--accent2); letter-spacing: 4px; }
-.header p { font-size: 13px; color: var(--muted); margin-top: 6px; }
-
-/* LAYOUT GRID UTAMA DESKTOP */
-.desktop-grid { 
-  display: grid; 
-  grid-template-columns: 1.2fr 1fr; 
-  gap: 1.5rem; 
-  align-items: start;
-}
-
-@media (max-width: 700px) {
-  .desktop-grid { grid-template-columns: 1fr; }
-}
-
-.card { 
-  background: var(--surface); 
-  border: 1px solid var(--border); 
-  border-radius: var(--radius-lg); 
-  padding: 1.5rem; 
-  width: 100%; 
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-.card-title { font-family: var(--pixel); font-size: 0.6rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 1rem; text-transform: uppercase; }
-
-/* KOLOM KIRI: TIMER BESAR */
-.timer-main-card { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center;
-  padding: 3rem 1.5rem;
-  min-height: 380px;
-}
-
-.mode-badge { 
-  font-family: var(--pixel); 
-  font-size: 0.6rem; 
-  letter-spacing: 3px; 
-  padding: 6px 14px; 
-  border-radius: 6px; 
-  margin-bottom: 2rem; 
-  background: rgba(197,153,182,0.12); 
-  color: var(--accent2); 
-  border: 1px solid rgba(197,153,182,0.25); 
-}
-.mode-badge.break { background: rgba(76,175,80,0.12); color: #7ee882; border-color: rgba(76,175,80,0.25); }
-
-.time-display-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-}
-
-.time-display { 
-  font-family: var(--pixel); 
-  font-size: 4rem; 
-  color: var(--text); 
-  background: #05050f; 
-  border: 4px solid var(--accent2); 
-  border-radius: var(--radius); 
-  padding: 1.5rem 0; 
-  width: 100%;
-  max-width: 340px;
+.timer {
   text-align: center;
-  letter-spacing: 2px;
-  box-shadow: inset 0 4px 12px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+  user-select: none;
 }
-
-.progress-bar { width: 100%; max-width: 340px; height: 10px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 1s linear; }
-.progress-fill.break { background: var(--green); }
-
-/* KOLOM KANAN: KONTROL & SPOTIFY */
-.right-column {
+.timer h2 {
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  margin-bottom: 0.5rem;
+  color: #ffb4a2;
+}
+.time-display {
+  font-size: 3rem;
+  background: #222;
+  color: #eee;
+  padding: 1rem 2rem;
+  border: 4px solid #c599b6;
+  border-radius: 6px;
+  margin-bottom: 0.7rem;
+  font-family: 'Press Start 2P', cursive, monospace;
+}
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #222;
+  border: 2px solid #574964;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.progress-fill {
+  height: 100%;
+  background: #f0a04b;
+  transition: width 1s linear;
+}
+.progress-fill.break {
+  background: #4caf50;
+}
+.settings {
+  margin-bottom: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  justify-content: center;
+  gap: 1rem;
 }
-
-.control-card {
-  padding: 1.5rem;
+.settings label {
+  font-size: 0.7rem;
+  color: #f9f9f9;
+  font-family: 'Press Start 2P', cursive, monospace;
+  user-select: none;
 }
-
-.divider {
-  border: 0;
-  height: 1px;
-  background: var(--border);
-  margin: 1.25rem 0;
+.settings input {
+  width: 3rem;
+  margin-left: 0.3rem;
+  font-size: 0.7rem;
+  padding: 0.2rem;
+  border-radius: 4px;
+  border: 3px solid #eee;
+  background: #222;
+  color: #eee;
+  box-shadow: 3px 3px 0 #444;
+  font-family: 'Press Start 2P', cursive, monospace;
+  outline: none;
 }
-
-.sub-lbl { font-size: 11px; color: var(--muted); }
-
-/* GOALS SECTION */
-.goal-section { width: 100%; }
-.goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-.goal-label { font-size: 13px; font-weight: 500; color: var(--text); }
-.goal-count { font-family: var(--pixel); font-size: 0.65rem; color: var(--accent); }
-.goal-bar { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
-.goal-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width 0.4s ease; }
-.goal-input-row { display: flex; align-items: center; gap: 8px; margin-top: 0.75rem; font-size: 12px; color: var(--muted); }
-.goal-input-row input { width: 50px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 4px; font-size: 12px; text-align: center; outline: none; font-family: var(--pixel); }
-
-/* SETTINGS INPUTS */
-.settings-row { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
-.settings-row label { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; }
-.settings-row input[type=number] { width: 55px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; padding: 5px; font-size: 12px; font-family: var(--pixel); text-align: center; outline: none; margin-left: auto; }
-.settings-row input:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* CONTROLS BUTTONS */
-.btn-row { display: flex; gap: 0.5rem; margin-top: 1.25rem; width: 100%; }
-.btn { font-family: var(--pixel); font-size: 0.6rem; padding: 0.75rem 1rem; border-radius: 6px; border: none; cursor: pointer; transition: transform 0.1s, opacity 0.1s; letter-spacing: 1px; }
-.btn:hover { transform: translateY(-2px); opacity: 0.95; }
-.btn-start { flex: 2; background: var(--accent); color: #111; font-weight: bold; }
-.btn-start.running { background: var(--green); color: #fff; }
-.btn-reset { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-mute { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 1rem; padding: 0.5rem 0.75rem; border-radius: 6px; }
-
-/* DESKTOP STATS TABS */
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
-.stat-lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-val { font-size: 14px; font-weight: 600; color: var(--accent); }
-
-/* SPOTIFY */
-.spotify-card { padding: 1rem; }
-.spotify-card iframe { border-radius: var(--radius); display: block; }
-
-/* NOTIF & BANNERS BAR */
-.banner { display: none; padding: 0.6rem 1rem; border-radius: var(--radius); font-size: 12px; text-align: center; margin-bottom: 1rem; font-weight: 500; width: 100%; }
-.banner.show { display: block; }
-.banner.break-banner { background: rgba(76,175,80,0.12); color: #7ee882; border: 1px solid rgba(76,175,80,0.2); }
-.banner.done-banner { background: rgba(240,160,75,0.12); color: var(--accent); border: 1px solid rgba(240,160,75,0.2); }
-
-.notif-bar { background: rgba(91,155,213,0.1); border: 1px solid rgba(91,155,213,0.25); border-radius: var(--radius); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #80b8e8; margin-bottom: 1rem; width: 100%; gap: 10px; }
-.notif-bar button { font-size: 11px; background: rgba(91,155,213,0.18); border: 1px solid rgba(91,155,213,0.3); color: #80b8e8; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: background 0.2s; }
-.notif-bar button:hover { background: rgba(91,155,213,0.3); }
+.buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.buttons button {
+  background: #f0a04b;
+  color: #222;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  margin: 0 0.3rem;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 #fada7a;
+  transition: transform 0.1s;
+  cursor: pointer;
+}
+.buttons button.running {
+  background: #4caf50;
+  box-shadow: 2px 2px 0 #367c39;
+}
+.buttons button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.buttons button:hover {
+  transform: translateY(-2px);
+}
+.mute-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 1.2rem;
+  padding: 0.3rem !important;
+}
+.stats {
+  font-size: 0.6rem;
+  color: #fada7a;
+  font-family: 'Press Start 2P', cursive, monospace;
+}
+.stats .sep {
+  margin: 0 0.5rem;
+  opacity: 0.5;
+}
+.settings input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>
